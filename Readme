@@ -1,0 +1,222 @@
+# IPL Query Engine — Natural Language to SQL
+
+> Ask any IPL question in plain English. AI writes the SQL. You get the answer.
+
+**"Who hit the most sixes in IPL history?"** → SQL generated → Answer in under 2 seconds.
+
+Live demo powered by **Groq + LLaMA 3** on **278,205 balls** of real IPL data (2008–2025).
+
+---
+
+##  What This Project Does
+
+A **Text-to-SQL** application where anyone — cricket fan or data analyst — can ask questions in natural language and get accurate, data-backed answers without writing a single line of SQL.
+
+The output isn't just a boring table. Results render as **smart dashboards**:
+- 🏏 **Player queries** → Hero card with Wikipedia photo + ranked player cards
+- 🏆 **Team queries** → Team cards with official IPL logos
+- 📊 **Season queries** → Animated bar charts
+- 📋 **General stats** → Gold leaderboard with progress bars
+
+---
+
+##  Features
+
+- Plain English → SQL → Beautiful dashboard in seconds
+- Wikipedia photos auto-fetched for top-ranked players
+- Official IPL team logos for all 13 franchises
+- Smart result type detection (player cards / team cards / chart / leaderboard)
+- Schema-aware LLM prompting for high SQL accuracy
+- Groq cloud LLM (free, sub-second) with local Ollama fallback
+- Handles historical team name aliases (Delhi Daredevils → Delhi Capitals)
+- Query history tracking with latency display
+- IPL-themed dark UI — stadium night aesthetic
+
+---
+
+## Project Structure
+
+```
+ipl-sql-generator/
+│
+├── data/                         # Raw CSV files (IPL dataset 2008–2025)
+│   ├── teams_data.csv
+│   ├── team_aliases.csv
+│   ├── players-data-updated.csv
+│   ├── ipl_matches_data.csv
+│   └── ball_by_ball_data.csv
+│
+├── venv/                         # Python virtual environment (not pushed to GitHub)
+├── .env                          # API keys — never pushed to GitHub
+├── .gitignore
+│
+├── database.py                   # Builds ipl.db from CSVs + schema for LLM
+├── llm.py                        # LLM wrapper — Groq (primary) + Ollama (fallback)
+├── query_runner.py               # Safely executes SQL against ipl.db
+├── api.py                        # FastAPI backend — single /query endpoint
+├── index.html                    # Full frontend UI — one file, no framework
+│
+├── requirements.txt
+└── README.md
+```
+
+> **Note:** `ipl.db`, `venv/`, `data/` and `.env` are excluded from GitHub (see `.gitignore`).  
+> Download the dataset from [Kaggle](https://www.kaggle.com/datasets/maratheabhishek/ipl-dataset-2008-to-2025) and run `python database.py` to build the DB locally.
+
+---
+
+##  Database
+
+| Table | Rows | Description |
+|-------|------|-------------|
+| `teams` | 16 | IPL franchises |
+| `team_aliases` | 46 | Historical name mappings |
+| `players` | 772 | Player profiles — batting/bowling style, role |
+| `matches` | 1,169 | Match-level data — venue, toss, winner, margin |
+| `deliveries` | 278,205 | Ball-by-ball — every run, wicket, extra ever bowled |
+
+The `deliveries` table is the heart of the project — it enables granular queries like powerplay economy rates, player vs player matchups, death-over analysis, and boundary percentages.
+
+---
+
+## How It Works
+
+```
+User types question in English
+           ↓
+      api.py receives it
+           ↓
+   llm.py builds a prompt
+   (question + full DB schema)
+           ↓
+   Groq runs LLaMA 3 (free)
+   returns raw SQL query
+           ↓
+  query_runner.py executes SQL
+  on ipl.db (SQLite)
+           ↓
+  index.html renders result
+  as player cards / team cards
+  / chart / leaderboard
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **LLM** | LLaMA 3 via Groq API (free, ~0.8s latency) |
+| **LLM Fallback** | Ollama (local, offline) |
+| **Backend** | Python, FastAPI, Uvicorn |
+| **Database** | SQLite (via Pandas + sqlite3) |
+| **Frontend** | Pure HTML / CSS / JavaScript (no framework) |
+| **Photos** | Wikipedia REST API (free, no key) |
+| **Team Logos** | Wikipedia SVG files |
+| **Data Processing** | Pandas |
+
+---
+
+## Getting Started
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/yourusername/ipl-sql-generator.git
+cd ipl-sql-generator
+```
+
+### 2. Download the dataset
+Download from [Kaggle](https://www.kaggle.com/datasets/maratheabhishek/ipl-dataset-2008-to-2025) and place all 5 CSVs in the `data/` folder.
+
+### 3. Set up virtual environment
+```bash
+python -m venv venv
+venv\Scripts\activate        # Windows
+source venv/bin/activate     # Mac/Linux
+```
+
+### 4. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 5. Add your free Groq API key
+Get a free key at [console.groq.com](https://console.groq.com) — takes 2 minutes, no credit card.
+```
+# .env
+GROQ_API_KEY=gsk_your_key_here
+```
+
+### 6. Build the database
+```bash
+python database.py
+```
+
+### 7. Run the server
+```bash
+python -m uvicorn api:app --reload
+```
+
+### 8. Open in browser
+```
+http://localhost:8000
+```
+
+---
+
+## Example Questions
+
+```
+Top 5 batsmen by total runs in IPL history
+Top 5 bowlers by wickets all time
+Which team won the most IPL matches?
+Most sixes hit by a batsman
+Jasprit Bumrah career wickets
+MS Dhoni total runs in IPL
+Best economy rate bowlers min 50 overs
+Most Player of the Match awards
+Top run scorers in 2024 season
+Which batsman has the best strike rate?
+```
+
+---
+
+## Real-World Applications
+
+This project uses IPL as a demo, but **the same architecture works on any structured dataset**:
+
+| Domain | Example Question |
+|--------|-----------------|
+| **E-commerce** | "Top 10 products by return rate in 2024?" |
+| **Finance** | "Show monthly revenue trend for Q3 vs Q4" |
+| **Healthcare** | "Which treatment has the highest recovery rate?" |
+| **HR Analytics** | "Attrition rate by department last 2 years?" |
+| **Marketing** | "Top campaigns by ROI this quarter?" |
+
+**Why it matters:** Democratizes data access — non-technical teams get self-serve analytics without depending on data engineers for every query.
+
+---
+
+## Safety
+
+- Read-only query enforcement (blocks DROP, DELETE, UPDATE, INSERT)
+- Schema-grounded prompting reduces LLM hallucinations
+- Error handling for malformed SQL — shown cleanly in UI, never crashes
+
+---
+
+## License
+
+MIT — free to use, modify, and distribute.
+
+---
+
+## Acknowledgements
+
+- IPL dataset: [Kaggle — maratheabhishek](https://www.kaggle.com/datasets/maratheabhishek/ipl-dataset-2008-to-2025)
+- LLM inference: [Groq](https://groq.com) (free tier)
+- Inspired by the Text-to-SQL research field
+
+---
+
+*Built with 🏏 passion for cricket and data.*
