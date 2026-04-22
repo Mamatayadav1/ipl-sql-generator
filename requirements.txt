@@ -3,3 +3,5 @@ streamlit
 ollama
 groq
 python-dotenv
+fastapi
+uvicorn
